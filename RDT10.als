@@ -40,23 +40,21 @@ fact Trace {
 	last.end
 }
 
-assert allDataCanBeTransferred{
-	
-}
-assert someDataCanBeTransferred{
-	
+pred someDataCanBeTransferred{
+
 }
 
+assert allDataCanBeTransferred{
+	first.init => last.end
+}
 
 //used for debug
 /*fact atleastTwoData{
 	#(Data) =2
 }
 */
-pred show[]{}
 
-run show for 3
 
-check someDataCanBeTransferred
+run someDataCanBeTransferred for 3
 check allDataCanBeTransferred
 
