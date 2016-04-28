@@ -41,17 +41,17 @@ pred Trace {
 }
 
 
-assert allDataCanBeTransferred{
+assert notAllDataCanBeTransferred{
 	Trace => not last.end
 }
 
 //used for debug
 /*fact atleastTwoData{
-	#(Data) =2
+	#(Data) = 3
 }
 */
 
 
 run Trace for 3
-check allDataCanBeTransferred
+check notAllDataCanBeTransferred
 
