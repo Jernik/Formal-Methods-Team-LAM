@@ -41,8 +41,8 @@ pred Trace {
 }
 
 
-assert notAllDataCanBeTransferred{
-	Trace => not last.end
+assert allDataCanBeTransferred{
+	Trace => last.end
 }
 
 //used for debug
@@ -53,5 +53,5 @@ assert notAllDataCanBeTransferred{
 
 
 run Trace for 3
-check notAllDataCanBeTransferred
+check allDataCanBeTransferred
 
