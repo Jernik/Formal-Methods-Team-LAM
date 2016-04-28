@@ -32,7 +32,7 @@ pred State.end{
 	no last.sender.buffer
 }
 
-fact Trace {
+pred Trace {
 	first.init
 	all s: State - last |
 		let s' = s.next |
@@ -40,12 +40,9 @@ fact Trace {
 	last.end
 }
 
-pred someDataCanBeTransferred{
-
-}
 
 assert allDataCanBeTransferred{
-	first.init => last.end
+	Trace => not last.end
 }
 
 //used for debug
@@ -55,6 +52,6 @@ assert allDataCanBeTransferred{
 */
 
 
-run someDataCanBeTransferred for 3
+run Trace for 3
 check allDataCanBeTransferred
 
