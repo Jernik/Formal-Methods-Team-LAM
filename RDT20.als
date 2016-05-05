@@ -80,8 +80,16 @@ pred Trace {
 	first.init
 	all s: State - last |
 		let s' = s.next |
-			(Step[s, s'])  or Progress[s,s'])
+			(Step[s, s'])  and Progress[s,s'])
 	last.end
+}
+
+pred Progress[s,s':State]{
+	((s.srState in SendState and s'.srState in ReceiveState) or (s.srState in ReceiveState and s'.srState in SendState)) and
+	#(s'.sender.buffer)-
+	//one send one receive
+//buffers not off by more than 1
+	or s.end
 }
 
 
