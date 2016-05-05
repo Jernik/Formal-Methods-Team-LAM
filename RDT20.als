@@ -54,25 +54,58 @@ pred State.init{
 pred Step[s, s': State]{
 	s.srState in SendState=> //in send state
 		s.packet in AckPacket => //in send state, ackPacket
-			(one d:Data|
-				d in s.sender.buffer and d not in s'.sender.buffer and s'.packet.data = d and s'.sender.packetSent = s'.packet
-				and s'.srState=ReceiveState and s'.packet in DataPacket 
-				and s'.sender.buffer = s.sender.buffer - d and s'.receiver.buffer = s.receiver.buffer)
+			HandleAckPacket[s,s']
 		else  //in send state, nackPacket
-			s'.packet.data=s.sender.packetSent.data and s'.packet not = s.sender.packetSent
-			and s'.srState=ReceiveState
-			and s'.sender.buffer = s.sender.buffer and s'.receiver.buffer = s.receiver.buffer
-		else //in receive state
-			s.packet not in CorruptedDataPacket => //in receive state, data not corrupted
-				s'.receiver.buffer = s.receiver.buffer+s.packet.data and s'.packet in AckPacket and s'.sender.buffer = s.sender.buffer and s'.srState in SendState 
-				and s'.sender.packetSent = s.sender.packetSent
-			else //in receive state, data corrupted
-				s'.packet in NackPacket and s'.sender.buffer = s.sender.buffer and s'.receiver.buffer = s.receiver.buffer and s'.srState in SendState
-					and s'.sender.packetSent = s.sender.packetSent
+			HandleNackPacket[s,s']
+	else //in receive state
+		s.packet not in CorruptedDataPacket => //in receive state, data not corrupted
+				HandleGoodDataPacket[s,s']
+		else //in receive state, data corrupted
+				HandleCorruptDataPacket[s,s']
 }
 
+pred HandleAckPacket[s, s': State] {
+	(one d:Data|
+		d in s.sender.buffer and d not in s'.sender.buffer
+			and s'.packet.data = d and s'.sender.packetSent = s'.packet
+		and s'.srState=ReceiveState and s'.packet in DataPacket 
+		and s'.sender.buffer = s.sender.buffer - d and s'.receiver.buffer = s.receiver.buffer)
+}
+
+pred HandleNackPacket[s,s':State]{
+	s'.packet.data=s.sender.packetSent.data and s'.packet not = s.sender.packetSent
+		and s'.srState=ReceiveState
+		and s'.sender.buffer = s.sender.buffer and s'.receiver.buffer = s.receiver.buffer
+}
+
+pred HandleGoodDataPacket[s,s':State]{
+	s'.receiver.buffer = s.receiver.buffer+s.packet.data and s'.packet in AckPacket and s'.sender.buffer = s.sender.buffer and s'.srState in SendState 
+		and s'.sender.packetSent = s.sender.packetSent
+}
+
+pred HandleCorruptDataPacket[s,s':State]{
+	s'.packet in NackPacket and s'.sender.buffer = s.sender.buffer and s'.receiver.buffer = s.receiver.buffer and s'.srState in SendState
+		and s'.sender.packetSent = s.sender.packetSent
+}
+
+pred TestHandleAckPacket[] {
+	first.init
+	Step[first,first.next] and Step[first.next,first.next.next] and HandleAckPacket[first.next.next,first.next.next.next]
+}
+
+pred TestHandleNackPacket[] {
+	first.init
+	Step[first,first.next] and first.next.packet in CorruptedDataPacket
+	and Step[first.next,first.next.next]
+	and HandleNackPacket[first.next.next,first.next.next.next]
+	and Step[first.next.next,first.next.next.next] and first.next.next.next.packet not in CorruptedDataPacket
+
+}
+
+run TestHandleNackPacket for 5 but 2 Data
+
 pred State.end{
-	first.sender.buffer = this.receiver.buffer
+	this.receiver.buffer = Data
 	no this.sender.buffer
 }
 
@@ -80,37 +113,24 @@ pred Trace {
 	first.init
 	all s: State - last |
 		let s' = s.next |
-			(Step[s, s'])  and Progress[s,s'])
-	last.end
+			(Step[s, s'])
+//	last.end // makes sure that we actually find a result
 }
-
-pred Progress[s,s':State]{
-	((s.srState in SendState and s'.srState in ReceiveState) or (s.srState in ReceiveState and s'.srState in SendState)) and
-	#(s'.sender.buffer)-
-	//one send one receive
-//buffers not off by more than 1
-	or s.end
-}
-
 
 assert allDataCanBeTransferred{
 	Trace => last.end
 }
-fact oneCorrupt{
+pred oneCorrupt{
 	#(CorruptedDataPacket)>=1
 }
-fact atLeastOneNotCorrupt{
+pred atLeastOneNotCorrupt{
 	#(DataPacket-CorruptedDataPacket)>=1
 }
-/*fact atLeastOneResponse{
-	#(ResponsePacket)>1
-}
-//used for debug
-*/fact atleastTwoData{
+pred atleastTwoData{
 	#(Data) = 3
 }
 
 
 
-run Trace for 6
-check allDataCanBeTransferred
+run Trace for 5 but exactly 2 Data
+check allDataCanBeTransferred for 4 but 2 Data
