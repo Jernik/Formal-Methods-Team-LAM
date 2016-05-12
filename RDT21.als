@@ -94,8 +94,12 @@ pred HandleNackPacket[s,s':State]{
 }
 
 pred HandleGoodDataPacket[s,s':State]{
-	s'.receiver.buffer = s.receiver.buffer+s.packet.data and s'.packet in AckPacket and s'.sender.buffer = s.sender.buffer and s'.srState in SendState 
+		s'.packet in AckPacket and s'.sender.buffer = s.sender.buffer and s'.srState in SendState 
 		and s'.sender.packetSent = s.sender.packetSent and s'.packet.sequenceBit = s.sender.packetSent.sequenceBit
+		and  (s'.packet.sequenceBit = s.packet.sequenceBit=>
+				s'.receiver.buffer = s.receiver.buffer+s.packet.data 
+			else
+				s'.receiver.buffer = s.receiver.buffer)
 }
 
 pred HandleCorruptDataPacket[s,s':State]{
@@ -129,7 +133,7 @@ pred Trace {
 	all s: State - last |
 		let s' = s.next |
 			(Step[s, s'])
-//	last.end // makes sure that we actually find a result
+	last.end // makes sure that we actually find a result
 }
 
 assert allDataCanBeTransferred{
@@ -148,7 +152,19 @@ pred atleastTwoData{
 	#(Data) = 3
 }
 
+pred atLeastOneBadSignal{
+	some s:State-last |
+		let s' = s.next |
+			not s.packet.sequenceBit =s'.packet.sequenceBit
+			and  s.srState = ReceiveState and s'.packet in AckPacket
+}
+pred testTrace{
+	atLeastOneBadSignal
+	and Trace
+}
+
 
 
 run Trace for 8 but exactly 3 Data
+run testTrace for 7 but exactly 2 Data
 check allDataCanBeTransferred for 4 but 2 Data
