@@ -141,6 +141,9 @@ pred oneCorrupt{
 pred atLeastOneNotCorrupt{
 	#(DataPacket-CorruptedDataPacket)>=1
 }
+pred atMostOneCorrupt{
+	#(CorruptedDataPacker)<=1
+}
 pred atleastTwoData{
 	#(Data) = 3
 }
