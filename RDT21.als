@@ -46,6 +46,7 @@ sig State{
 
 pred State.init{
 	this.sender.buffer = Data
+	this.packet.sequenceBit = this.sender.packetSent.sequenceBit
 	no this.receiver.buffer
 	this.packet in AckPacket
 	this.srState in SendState
@@ -87,7 +88,7 @@ pred HandleCorrectAckPacket[s, s': State] {
 }
 
 pred HandleNackPacket[s,s':State]{
-	s'.packet.data=s.sender.packetSent.data and s'.packet not = s.sender.packetSent
+	s'.packet.data=s.sender.packetSent.data and s'.packet not = s.sender.packetSent and s'.sender.packetSent not = s.sender.packetSent
 		and s'.srState=ReceiveState
 		and s'.sender.buffer = s.sender.buffer and s'.receiver.buffer = s.receiver.buffer
 		and s'.packet.sequenceBit = s.sender.packetSent.sequenceBit
@@ -135,6 +136,11 @@ pred Trace {
 assert allDataCanBeTransferred{
 	Trace => last.end
 }
+
+assert allDataCanBeTransferredWithErrorLimit{
+	(atMostOneCorrupt and Trace) => last.end
+}
+
 pred oneCorrupt{
 	#(CorruptedDataPacket)>=1
 }
@@ -142,7 +148,7 @@ pred atLeastOneNotCorrupt{
 	#(DataPacket-CorruptedDataPacket)>=1
 }
 pred atMostOneCorrupt{
-	#(CorruptedDataPacker)<=1
+	all d: DataPacket - CorruptedDataPacket | lone c : CorruptedDataPacket | d.data = c.data
 }
 pred atleastTwoData{
 	#(Data) = 3
@@ -152,3 +158,4 @@ pred atleastTwoData{
 
 run Trace for 8 but exactly 3 Data
 check allDataCanBeTransferred for 4 but 2 Data
+check allDataCanBeTransferredWithErrorLimit for 8 but 2 Data
