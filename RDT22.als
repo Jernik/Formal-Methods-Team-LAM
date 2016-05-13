@@ -27,7 +27,6 @@ sig CorruptedDataPacket extends DataPacket{}
 
 abstract sig ResponsePacket extends Packet{}
 sig AckPacket extends ResponsePacket{}
-sig NackPacket extends ResponsePacket{}
 
 
 
@@ -62,7 +61,7 @@ pred Step[s, s': State]{
 		s.packet in AckPacket => //in send state, ackPacket
 			HandleAckPacket[s,s']
 		else  //in send state, nackPacket
-			HandleNackPacket[s,s']
+			HandleBadAckPacket[s,s']
 	else //in receive state
 		s.packet not in CorruptedDataPacket => //in receive state, data not corrupted
 				HandleGoodDataPacket[s,s']
@@ -74,7 +73,7 @@ pred HandleAckPacket[s, s': State] {
 	s.packet.sequenceBit = s.sender.packetSent.sequenceBit =>
 		HandleCorrectAckPacket[s, s']
 	else
-		HandleNackPacket[s, s']
+		HandleBadAckPacket[s, s']
 }
 
 pred HandleCorrectAckPacket[s, s': State] {
@@ -86,7 +85,7 @@ pred HandleCorrectAckPacket[s, s': State] {
 		and not (s'.packet.sequenceBit = s.sender.packetSent.sequenceBit)
 }
 
-pred HandleNackPacket[s,s':State]{
+pred HandleBadAckPacket[s,s':State]{
 	s'.packet.data=s.sender.packetSent.data and s'.packet not = s.sender.packetSent
 		and s'.srState=ReceiveState
 		and s'.sender.buffer = s.sender.buffer and s'.receiver.buffer = s.receiver.buffer
@@ -103,8 +102,8 @@ pred HandleGoodDataPacket[s,s':State]{
 }
 
 pred HandleCorruptDataPacket[s,s':State]{
-	s'.packet in NackPacket and s'.sender.buffer = s.sender.buffer and s'.receiver.buffer = s.receiver.buffer and s'.srState in SendState
-		and s'.sender.packetSent = s.sender.packetSent and s'.packet.sequenceBit = s.sender.packetSent.sequenceBit
+	s'.packet in AckPacket and s'.sender.buffer = s.sender.buffer and s'.receiver.buffer = s.receiver.buffer and s'.srState in SendState
+		and s'.sender.packetSent = s.sender.packetSent and not (s'.packet.sequenceBit = s.sender.packetSent.sequenceBit)
 }
 
 pred TestHandleAckPacket[] {
@@ -116,7 +115,7 @@ pred TestHandleNackPacket[] {
 	first.init
 	Step[first,first.next] and first.next.packet in CorruptedDataPacket
 	and Step[first.next,first.next.next]
-	and HandleNackPacket[first.next.next,first.next.next.next]
+	and HandleBadAckPacket[first.next.next,first.next.next.next]
 	and Step[first.next.next,first.next.next.next] and first.next.next.next.packet not in CorruptedDataPacket
 
 }
@@ -146,7 +145,7 @@ pred atLeastOneNotCorrupt{
 	#(DataPacket-CorruptedDataPacket)>=1
 }
 pred atMostOneCorrupt{
-	#(CorruptedDataPacker)<=1
+	#(CorruptedDataPacket)<=1
 }
 pred atleastTwoData{
 	#(Data) = 3
@@ -165,6 +164,6 @@ pred testTrace{
 
 
 
-run Trace for 8 but exactly 3 Data
+run Trace for 5 but exactly 2 Data
 run testTrace for 7 but exactly 2 Data
 check allDataCanBeTransferred for 4 but 2 Data
