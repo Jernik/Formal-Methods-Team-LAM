@@ -173,5 +173,5 @@ pred testTrace{
 
 run Trace for 8 but exactly 3 Data
 run testTrace for 7 but exactly 2 Data
-check allDataCanBeTransferred for 8 but 3 Data
+check allDataCanBeTransferred for 10 but 2 Data
 check allDataCanBeTransferredWithErrorLimit for 14 but 3 Data
