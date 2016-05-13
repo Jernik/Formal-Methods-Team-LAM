@@ -48,6 +48,7 @@ pred State.init{
 	no this.receiver.buffer
 	this.packet in AckPacket
 	this.srState in SendState
+	this.sender.packetSent.sequenceBit = this.packet.sequenceBit
 }
 
 

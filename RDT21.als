@@ -49,6 +49,7 @@ pred State.init{
 	no this.receiver.buffer
 	this.packet in AckPacket
 	this.srState in SendState
+	this.sender.packetSent.sequenceBit = this.packet.sequenceBit
 }
 
 
@@ -139,9 +140,6 @@ pred Trace {
 assert allDataCanBeTransferred{
 	Trace => last.end
 }
-assert allDataCanBeTransferredWithErrorLimit{
-	(atMostOneCorrupt and Trace) => last.end
-}
 pred oneCorrupt{
 	#(CorruptedDataPacket)>=1
 }
@@ -149,7 +147,7 @@ pred atLeastOneNotCorrupt{
 	#(DataPacket-CorruptedDataPacket)>=1
 }
 pred atMostOneCorrupt{
-	all d: DataPacket - CorruptedDataPacket | lone c : CorruptedDataPacket | d.data = c.data
+	#(CorruptedDataPacket)<=1
 }
 pred atleastTwoData{
 	#(Data) = 3
@@ -171,4 +169,3 @@ pred testTrace{
 run Trace for 8 but exactly 3 Data
 run testTrace for 7 but exactly 2 Data
 check allDataCanBeTransferred for 4 but 2 Data
-check allDataCanBeTransferredWithErrorLimit for 6 but 3 Data
