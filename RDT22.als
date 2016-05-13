@@ -133,12 +133,17 @@ pred Trace {
 	all s: State - last |
 		let s' = s.next |
 			(Step[s, s'])
-	last.end // makes sure that we actually find a result
+//	last.end // makes sure that we actually find a result
 }
 
 assert allDataCanBeTransferred{
 	Trace => last.end
 }
+
+assert allDataCanBeTransferredWithErrorLimit{
+	(atMostOneCorrupt and Trace) => last.end
+}
+
 pred oneCorrupt{
 	#(CorruptedDataPacket)>=1
 }
@@ -146,7 +151,7 @@ pred atLeastOneNotCorrupt{
 	#(DataPacket-CorruptedDataPacket)>=1
 }
 pred atMostOneCorrupt{
-	#(CorruptedDataPacket)<=1
+	all d: Data | lone c : CorruptedDataPacket | d = c.data
 }
 pred atleastTwoData{
 	#(Data) = 3
@@ -167,4 +172,5 @@ pred testTrace{
 
 run Trace for 5 but exactly 2 Data
 run testTrace for 7 but exactly 2 Data
-check allDataCanBeTransferred for 4 but 2 Data
+check allDataCanBeTransferred for 8 but 2 Data
+check allDataCanBeTransferredWithErrorLimit for 10 but 2 Data
