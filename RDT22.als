@@ -133,7 +133,7 @@ pred Trace {
 	all s: State - last |
 		let s' = s.next |
 			(Step[s, s'])
-//	last.end // makes sure that we actually find a result
+	last.end // makes sure that we actually find a result
 }
 
 assert allDataCanBeTransferred{
@@ -170,7 +170,7 @@ pred testTrace{
 
 
 
-run Trace for 5 but exactly 2 Data
+run Trace for 6 but exactly 1 Data
 run testTrace for 7 but exactly 2 Data
 check allDataCanBeTransferred for 8 but 2 Data
 check allDataCanBeTransferredWithErrorLimit for 10 but 2 Data
