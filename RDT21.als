@@ -80,7 +80,7 @@ pred HandleAckPacket[s, s': State] {
 
 pred HandleCorrectAckPacket[s, s': State] {
 		(one d:Data|
-		s'.sender.buffer = s.sender.buffer - d
+		d in s.sender.buffer and s'.sender.buffer = s.sender.buffer - d
 			and s'.packet.data = d and s'.sender.packetSent = s'.packet
 		and s'.srState=ReceiveState and s'.packet in DataPacket 
 		and s'.sender.buffer = s.sender.buffer - d and s'.receiver.buffer = s.receiver.buffer)
@@ -140,6 +140,11 @@ pred Trace {
 assert allDataCanBeTransferred{
 	Trace => last.end
 }
+
+assert allDataCanBeTransferredWithErrorLimit{
+	(atMostOneCorrupt and Trace) => last.end
+}
+
 pred oneCorrupt{
 	#(CorruptedDataPacket)>=1
 }
@@ -147,7 +152,7 @@ pred atLeastOneNotCorrupt{
 	#(DataPacket-CorruptedDataPacket)>=1
 }
 pred atMostOneCorrupt{
-	#(CorruptedDataPacket)<=1
+	all d: Data | lone c : CorruptedDataPacket | d = c.data
 }
 pred atleastTwoData{
 	#(Data) = 3
@@ -168,5 +173,5 @@ pred testTrace{
 
 run Trace for 8 but exactly 3 Data
 run testTrace for 7 but exactly 2 Data
-check allDataCanBeTransferred for 4 but 2 Data
-check allDataCanBeTransferredWithErrorLimit for 8 but 3 Data
+check allDataCanBeTransferred for 8 but 3 Data
+check allDataCanBeTransferredWithErrorLimit for 14 but 3 Data
